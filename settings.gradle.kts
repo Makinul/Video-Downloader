@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Instragram Video Downloader"
+rootProject.name = "Insta Loader"
 include(":app")
