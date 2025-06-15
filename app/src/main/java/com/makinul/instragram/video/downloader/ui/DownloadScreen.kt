@@ -45,19 +45,6 @@ fun DownloadScreen(
     modifier: Modifier = Modifier,
     viewModel: MainViewModel = koinViewModel()
 ) {
-
-    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-        val permissionState = rememberPermissionState(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
-
-        LaunchedEffect(Unit) {
-            if (!permissionState.status.isGranted) {
-                permissionState.launchPermissionRequest()
-            }
-        }
-    }
-
     val context = LocalContext.current
 
     /* Content for Download screen */
