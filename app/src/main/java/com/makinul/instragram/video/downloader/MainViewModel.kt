@@ -23,7 +23,7 @@ import kotlinx.coroutines.withContext
 import java.io.InputStream
 
 data class MyUiState(
-    val message: String = "Initial Message",
+    val message: String = "",
     val isLoading: Boolean = false,
     val progress: Float = -1f,
     val posts: Post? = null,
@@ -91,12 +91,20 @@ class MainViewModel(
 
             // Get the body as a ByteReadChannel
             val channel: ByteReadChannel = response.body()
-
+            val contentLength = response.headers["Content-Length"]?.toLongOrNull() ?: -1L
             // Convert the channel to an InputStream and save it
             val savedUri = saveVideoToGallery(
                 context = context,
                 inputStream = channel.toInputStream(), // <-- Ktor provides this extension
-                fileName = "instagram_video_${System.currentTimeMillis()}.mp4"
+                fileName = "instagram_video_${System.currentTimeMillis()}.mp4",
+                totalSizeInBytes = contentLength,
+                onProgress = { progress ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = true,
+                        progress = progress,
+                        message = "Download on going..."
+                    )
+                }
             )
 
             if (savedUri != null) {
@@ -121,7 +129,9 @@ class MainViewModel(
     private suspend fun saveVideoToGallery(
         context: Context,
         inputStream: InputStream,
-        fileName: String
+        fileName: String,
+        totalSizeInBytes: Long,
+        onProgress: (Float) -> Unit
     ): String? {
         return withContext(Dispatchers.IO) {
             val resolver = context.contentResolver
@@ -144,8 +154,19 @@ class MainViewModel(
                     try {
                         // Open an output stream to the new URI
                         resolver.openOutputStream(uri)?.use { outputStream ->
-                            // Copy the data from the input stream to the output stream
-                            inputStream.copyTo(outputStream)
+                            val buffer = ByteArray(8 * 1024)
+                            var bytesRead: Int
+                            var totalBytesRead = 0L
+
+                            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                                outputStream.write(buffer, 0, bytesRead)
+                                totalBytesRead += bytesRead
+
+                                if (totalSizeInBytes > 0) {
+                                    val progress = totalBytesRead.toFloat() / totalSizeInBytes
+                                    onProgress(progress.coerceIn(0f, 1f))
+                                }
+                            }
                         }
 
                         // Now that the file is fully written, update the IS_PENDING flag to 0
