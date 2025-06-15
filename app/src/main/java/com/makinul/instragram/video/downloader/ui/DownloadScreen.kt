@@ -127,6 +127,10 @@ fun DownloadScreen(
                     return@Button
                 }
 
+                if (instaUrl.contains("?igsh=")) {
+                    instaUrl = instaUrl.split("?igsh=").first()
+                }
+
                 if (instaUrl.endsWith("?utm_source=ig_web_copy_link")) {
                     instaUrl = instaUrl.replace("?utm_source=ig_web_copy_link", "")
                 }
