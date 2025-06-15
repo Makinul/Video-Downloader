@@ -48,9 +48,9 @@ This app uses modern Android architecture with **Jetpack Compose**, **Ktor**, an
 1. User pastes a public Instagram post/reel link
 2. App sends request to backend API (Flask + Instaloader)
 3. Receives:
-- `video_url`
-- `thumbnail_url`
-- `title`
+  - `video_url`
+  - `thumbnail_url`
+  - `title`
 4. App downloads video via Ktor with real-time progress
 5. Video saved in `Photos/` folder
 
@@ -62,3 +62,7 @@ This app uses modern Android architecture with **Jetpack Compose**, **Ktor**, an
 
 ```bash
 git clone https://github.com/Makinul/Video-Downloader.git
+
+### 2. Build & Run
+
+Open in Android Studio Flamingo+, run on any device with Android 6.0+

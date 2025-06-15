@@ -71,20 +71,6 @@ class MainViewModel(
 
 
     private suspend fun downloadInstaVideo(context: Context, videoUrl: String) {
-//        val videoUrl =
-//            "https://scontent-sof1-1.cdninstagram.com/o1/v/t16/f2/m86/AQP59AEN2R6tL5ykE7tpnINARl5jwAJhXXbRsxbypcdMg1VVKJN6lypelTeicGGdsljIe4BtSjlT5BVq2AKG17e-87UhI1rbU6Vz6ig.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNjI4LmJhc2VsaW5lIn0&_nc_cat=105&vs=1019626473639644_1371450734&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8wMjRCNjQwMjI3Nzc2NzIyQUFBMjBBODdDOEIxQzQ4RV92aWRlb19kYXNoaW5pdC5tcDQVAALIARIAFQIYOnBhc3N0aHJvdWdoX2V2ZXJzdG9yZS9HTHZRR2g1bk5NUUIta29DQU52MUZPel9GNE1yYnFfRUFBQUYVAgLIARIAKAAYABsAFQAAJpy5z6jFv9I%2FFQIoAkMzLBdAQbMzMzMzMxgSZGFzaF9iYXNlbGluZV8xX3YxEQB1%2Fgdl5p0BAA%3D%3D&ccb=9-4&oh=00_AfMgUBHcyhegJklSvIIrVPT7tqKauAEKT_7YmlV2VH6WYQ&oe=685084F3&_nc_sid=d885a2"
-//            myRepository.downloadInstaVideo(
-//                instaReelUrl = "https://scontent-sof1-1.cdninstagram.com/o1/v/t16/f2/m86/AQP59AEN2R6tL5ykE7tpnINARl5jwAJhXXbRsxbypcdMg1VVKJN6lypelTeicGGdsljIe4BtSjlT5BVq2AKG17e-87UhI1rbU6Vz6ig.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNjI4LmJhc2VsaW5lIn0&_nc_cat=105&vs=1019626473639644_1371450734&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8wMjRCNjQwMjI3Nzc2NzIyQUFBMjBBODdDOEIxQzQ4RV92aWRlb19kYXNoaW5pdC5tcDQVAALIARIAFQIYOnBhc3N0aHJvdWdoX2V2ZXJzdG9yZS9HTHZRR2g1bk5NUUIta29DQU52MUZPel9GNE1yYnFfRUFBQUYVAgLIARIAKAAYABsAFQAAJpy5z6jFv9I%2FFQIoAkMzLBdAQbMzMzMzMxgSZGFzaF9iYXNlbGluZV8xX3YxEQB1%2Fgdl5p0BAA%3D%3D&ccb=9-4&oh=00_AfMgUBHcyhegJklSvIIrVPT7tqKauAEKT_7YmlV2VH6WYQ&oe=685084F3&_nc_sid=d885a2",
-//                onProgress = { progress ->
-////                    _uiState.value = _uiState.value.copy(message = "Downloading... $progress%")
-//                    showLog(message = "progress $progress")
-//                },
-//                onComplete = { file ->
-////                    _uiState.value = _uiState.value.copy(message = "Download complete: ${file.path}")
-//                    showLog(message = "file ${file.absolutePath}")
-//                }
-//            )
-
         try {
             // Use the singleton Ktor client to make the request
             val response = httpClient.get(videoUrl)
@@ -93,12 +79,14 @@ class MainViewModel(
             val channel: ByteReadChannel = response.body()
             val contentLength = response.headers["Content-Length"]?.toLongOrNull() ?: -1L
             // Convert the channel to an InputStream and save it
+            showLog("contentLength $contentLength")
             val savedUri = saveVideoToGallery(
                 context = context,
                 inputStream = channel.toInputStream(), // <-- Ktor provides this extension
                 fileName = "instagram_video_${System.currentTimeMillis()}.mp4",
                 totalSizeInBytes = contentLength,
                 onProgress = { progress ->
+                    showLog("progress $progress")
                     _uiState.value = _uiState.value.copy(
                         isLoading = true,
                         progress = progress,
@@ -164,6 +152,7 @@ class MainViewModel(
 
                                 if (totalSizeInBytes > 0) {
                                     val progress = totalBytesRead.toFloat() / totalSizeInBytes
+                                    showLog("progress $progress")
                                     onProgress(progress.coerceIn(0f, 1f))
                                 }
                             }

@@ -130,7 +130,7 @@ fun DownloadScreen(
                 if (instaUrl.endsWith("?utm_source=ig_web_copy_link")) {
                     instaUrl = instaUrl.replace("?utm_source=ig_web_copy_link", "")
                 }
-
+                errorMessage.value = ""
                 viewModel.fetchInstaVideo(context = context, instaUrl = instaUrl)
             },
             modifier = Modifier
@@ -152,15 +152,16 @@ fun DownloadScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         if (uiState.isLoading) {
-            if (currentProgress.floatValue > 0f)
+            if (currentProgress.floatValue > 0f) {
                 LinearProgressIndicator(
                     progress = { currentProgress.floatValue },
                     modifier = Modifier.fillMaxWidth()
                 )
-            else
+            } else {
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth()
                 )
+            }
         } else {
             if (uiState.progress == 1f) {
                 instaUrl = ""
