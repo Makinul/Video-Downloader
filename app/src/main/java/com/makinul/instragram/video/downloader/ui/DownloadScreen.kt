@@ -49,6 +49,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.makinul.instragram.video.downloader.MainViewModel
+import com.makinul.instragram.video.downloader.utils.AppConstant.isNetworkAvailable
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
@@ -73,6 +74,8 @@ fun DownloadScreen(
 
     val context = LocalContext.current
     var instaUrl by remember { mutableStateOf("") }
+
+    var isConnected by remember { mutableStateOf<Boolean?>(null) }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentProgress = remember { mutableFloatStateOf(uiState.progress) }
@@ -108,6 +111,12 @@ fun DownloadScreen(
 
         Button(
             onClick = {
+                isConnected = isNetworkAvailable(context)
+                if (isConnected != true) {
+                    errorMessage.value = "❌ No Internet"
+                    return@Button
+                }
+
                 if (instaUrl.isEmpty()) {
                     errorMessage.value = "This field not be empty"
                     return@Button
@@ -118,7 +127,10 @@ fun DownloadScreen(
                     return@Button
                 }
 
-                errorMessage.value = ""
+                if (instaUrl.endsWith("?utm_source=ig_web_copy_link")) {
+                    instaUrl = instaUrl.replace("?utm_source=ig_web_copy_link", "")
+                }
+
                 viewModel.fetchInstaVideo(context = context, instaUrl = instaUrl)
             },
             modifier = Modifier
@@ -149,13 +161,19 @@ fun DownloadScreen(
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth()
                 )
-        } else if (uiState.progress == 1f) {
-            instaUrl = ""
-            errorMessage.value = uiState.message
+        } else {
+            if (uiState.progress == 1f) {
+                instaUrl = ""
+                errorMessage.value = ""
+                Text(uiState.message, color = Color.Green)
+            } else {
+                if (uiState.message.isNotEmpty())
+                    errorMessage.value = uiState.message
+            }
         }
 
         if (errorMessage.value.isNotEmpty()) {
-            Text(errorMessage.value)
+            Text(errorMessage.value, color = Color.Red)
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -234,6 +252,32 @@ fun HowToUseCard() {
                         "4. Video will be saved to your gallery",
                 lineHeight = 22.sp,
                 color = Color.DarkGray
+            )
+        }
+    }
+}
+
+@Composable
+fun NetworkCheckButton() {
+    val context = LocalContext.current
+    var isConnected by remember { mutableStateOf<Boolean?>(null) }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Button(onClick = {
+            isConnected = isNetworkAvailable(context)
+        }) {
+            Text("Check Network")
+        }
+
+        isConnected?.let { connected ->
+            Text(
+                text = if (connected) "✅ Internet Available" else "❌ No Internet",
+                color = if (connected) Color.Green else Color.Red,
+                modifier = Modifier.padding(top = 16.dp)
             )
         }
     }
