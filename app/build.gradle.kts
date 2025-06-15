@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.plugin.serialization)
 }
 
 android {
@@ -62,7 +63,28 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-
     // For Material 3 icons (if not already included)
     implementation(libs.androidx.material.icons.extended.android)
+
+    // Koin core
+    implementation(libs.koin.core)
+    // Koin for Android
+    implementation(libs.koin.android)
+    // Koin for Jetpack Compose (if you need Compose-specific integration like viewModel, rememberKoinInject)
+    implementation(libs.koin.androidx.compose)
+
+    // Ktor Client Core
+    implementation(libs.ktor.client.core)
+    // Ktor Client for Android (engine)
+    implementation(libs.ktor.client.android)
+    // Ktor Client Content Negotiation (for JSON parsing)
+    implementation(libs.ktor.client.content.negotiation)
+    // Ktor Client JSON Serializer (Kotlinx Serialization)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    // Kotlinx Serialization runtime
+    implementation(libs.kotlinx.serialization.json)
+    // Logging for Ktor
+    implementation(libs.ktor.client.logging)
+
+    implementation(libs.accompanist.permissions)
 }

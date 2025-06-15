@@ -152,9 +152,6 @@ fun ScreenStructure() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBarContent(navController: NavHostController, currentRoute: String?, currentTitle: String) {
-    // Routes where back button should appear
-    val showBackButton = currentRoute == "profile" || currentRoute == "search"
-
     TopAppBar(
         title = {
             Text(currentTitle)
@@ -166,46 +163,11 @@ fun TopBarContent(navController: NavHostController, currentRoute: String?, curre
             navigationIconContentColor = Color.White // Set color for navigation icon
         ),
         navigationIcon = {
-            if (showBackButton) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack, // Use AutoMirrored for LTR/RTL support
-                        contentDescription = "Back"
-                    )
-                }
-            } else {
-                // If you want to show something on the left when not showing back button, e.g., a logo
-                // Spacer(Modifier.width(0.dp)) // Or leave empty if nothing is needed
-            }
-        },
-        actions = {
-            Row {
-                // User Image
-                Image(
-                    imageVector = Icons.Default.Person, // Replace with your user image drawable/painter
-                    contentDescription = "User Profile",
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .clickable { navController.navigate("profile") } // Added click action here
-                        .padding(8.dp) // Add padding to make the circle visible
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    imageVector = Icons.Filled.Home,
+                    contentDescription = "Home"
                 )
-
-                // Search Icon
-                IconButton(onClick = { navController.navigate("search") }) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                    )
-                }
-
-                // Settings Icon
-                IconButton(onClick = { navController.navigate("settings") }) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Settings"
-                    )
-                }
             }
         }
     )
