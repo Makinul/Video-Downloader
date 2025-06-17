@@ -91,6 +91,7 @@ fun DownloadScreen(
             onValueChange = { newText ->
                 //Reset UiState
                 viewModel.resetUiState()
+                viewModel.updateProgress(-1f)
                 instaUrl = newText
             },
             modifier = Modifier.fillMaxWidth(),
