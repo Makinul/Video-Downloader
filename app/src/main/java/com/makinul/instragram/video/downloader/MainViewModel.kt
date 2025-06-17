@@ -8,11 +8,16 @@ import android.provider.MediaStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.makinul.instragram.video.downloader.data.model.Post
+import com.makinul.instragram.video.downloader.data.model.PostApiError
 import com.makinul.instragram.video.downloader.data.repository.MyRepository
 import com.makinul.instragram.video.downloader.di.httpClient
 import com.makinul.instragram.video.downloader.utils.AppConstant.showLog
 import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +25,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import java.io.InputStream
+import java.net.ConnectException
 
 data class MyUiState(
     val message: String = "",
@@ -50,6 +57,8 @@ class MainViewModel(
                     posts = post
                 )
 
+                showLog()
+
                 if (post.video_url.isNullOrEmpty()) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -59,16 +68,63 @@ class MainViewModel(
                 }
 
                 downloadInstaVideo(context = context, videoUrl = post.video_url)
-            } catch (e: Exception) {
-                print(e.message)
+            } catch (e: ClientRequestException) {
+                // 4xx responses
+                val statusCode = e.response.status.value
+                val errorBody = e.response.bodyAsText()
+                val apiError = try {
+                    Json.decodeFromString<PostApiError>(errorBody)
+                } catch (parseError: Exception) {
+                    null // fallback if parsing fails
+                }
+                val error = apiError?.error ?: "Client side error"
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Failed to load posts: ${e.localizedMessage}"
+                    progress = -1f,
+                    message = "",
+                    posts = null,
+                    error = error
+                )
+            } catch (e: ServerResponseException) {
+                // 5xx responses
+                val statusCode = e.response.status.value
+                val errorBody = e.response.bodyAsText()
+                val apiError = try {
+                    Json.decodeFromString<PostApiError>(errorBody)
+                } catch (parseError: Exception) {
+                    null // fallback if parsing fails
+                }
+                val error = apiError?.error ?: "Server side error"
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    progress = -1f,
+                    message = "",
+                    posts = null,
+                    error = error
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    progress = -1f,
+                    message = "",
+                    posts = null,
+                    error = "Unexpected error: ${e.localizedMessage}"
                 )
             }
         }
     }
 
+    // Add more functions here to handle UI events and update state
+    fun resetUiState() {
+        _uiState.value = MyUiState()
+    }
+
+    private val _downloadProgress = MutableStateFlow(0f)
+    val downloadProgress: StateFlow<Float> = _downloadProgress
+
+    fun updateProgress(value: Float) {
+        _downloadProgress.value = value.coerceIn(0f, 1f)
+    }
 
     private suspend fun downloadInstaVideo(context: Context, videoUrl: String) {
         try {
@@ -86,12 +142,7 @@ class MainViewModel(
                 fileName = "instagram_video_${System.currentTimeMillis()}.mp4",
                 totalSizeInBytes = contentLength,
                 onProgress = { progress ->
-                    showLog("progress $progress")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = true,
-                        progress = progress,
-                        message = "Download on going..."
-                    )
+                    updateProgress(progress)
                 }
             )
 
@@ -99,18 +150,52 @@ class MainViewModel(
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     progress = 1f,
-                    message = "Download complete"
+                    message = "Download complete",
+                    error = null,
                 )
             } else {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     progress = -1f,
-                    message = "Download failed"
+                    message = "",
+                    posts = null,
+                    error = "Download failed"
                 )
             }
         } catch (e: Exception) {
             // Handle Ktor network exceptions (e.g., HttpRequestTimeoutException, ConnectException)
             e.printStackTrace()
+            when (e) {
+                is HttpRequestTimeoutException -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        progress = -1f,
+                        message = "",
+                        posts = null,
+                        error = "Server not responding"
+                    )
+                }
+
+                is ConnectException -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        progress = -1f,
+                        message = "",
+                        posts = null,
+                        error = "Network connection error, please check and retry"
+                    )
+                }
+
+                else -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        progress = -1f,
+                        message = "",
+                        posts = null,
+                        error = "Unknown error occurred, please try again"
+                    )
+                }
+            }
         }
     }
 
@@ -152,7 +237,6 @@ class MainViewModel(
 
                                 if (totalSizeInBytes > 0) {
                                     val progress = totalBytesRead.toFloat() / totalSizeInBytes
-                                    showLog("progress $progress")
                                     onProgress(progress.coerceIn(0f, 1f))
                                 }
                             }

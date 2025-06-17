@@ -1,6 +1,7 @@
 package com.makinul.instragram.video.downloader.data.service
 
 import android.os.Environment
+import com.makinul.instragram.video.downloader.BuildConfig
 import com.makinul.instragram.video.downloader.data.model.Post
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -23,7 +24,7 @@ interface ApiService {
 class ApiServiceImpl(private val httpClient: HttpClient) : ApiService {
 
     override suspend fun fetchInstaVideo(instaReelUrl: String): Post {
-        return httpClient.get("https://ig-downloader-623725521268.asia-south1.run.app/get-instagram-video?url=$instaReelUrl")
+        return httpClient.get("${BuildConfig.BASE_URL}get-instagram-video?url=$instaReelUrl")
             .body()
     }
 

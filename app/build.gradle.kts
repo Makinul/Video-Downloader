@@ -17,10 +17,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["usesCleartextTraffic"] = "false"
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -28,6 +29,25 @@ android {
             )
         }
     }
+
+    // Specifies one flavor dimension.
+    flavorDimensions += "environment"
+    productFlavors {
+        create("prod") {
+            dimension = "environment"
+            buildConfigField ("String", "BASE_URL", "\"https://ig-downloader-623725521268.asia-south1.run.app/\"")
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
+        }
+        create("dev") {
+            dimension = "environment"
+            buildConfigField ("String", "BASE_URL", "\"http://10.0.2.2:5000/\"")
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            versionCode = 30000 + (android.defaultConfig.versionCode ?: 0)
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -37,6 +57,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

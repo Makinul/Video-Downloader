@@ -2,10 +2,8 @@ package com.makinul.instragram.video.downloader.ui
 
 import android.Manifest
 import android.os.Build
-import android.widget.ProgressBar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,15 +16,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,7 +45,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.makinul.instragram.video.downloader.MainViewModel
 import com.makinul.instragram.video.downloader.utils.AppConstant.isNetworkAvailable
-import kotlinx.coroutines.delay
+import com.makinul.instragram.video.downloader.utils.AppConstant.showLog
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -78,7 +73,9 @@ fun DownloadScreen(
     var isConnected by remember { mutableStateOf<Boolean?>(null) }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentProgress = remember { mutableFloatStateOf(uiState.progress) }
+    val currentProgress by viewModel.downloadProgress.collectAsState()
+
+    showLog("currentProgress, $currentProgress")
 
     val errorMessage = remember { mutableStateOf("") }
 
@@ -92,7 +89,8 @@ fun DownloadScreen(
         OutlinedTextField(
             value = instaUrl,
             onValueChange = { newText ->
-                // 2. Update the state whenever the user types.
+                //Reset UiState
+                viewModel.resetUiState()
                 instaUrl = newText
             },
             modifier = Modifier.fillMaxWidth(),
@@ -156,9 +154,9 @@ fun DownloadScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         if (uiState.isLoading) {
-            if (currentProgress.floatValue > 0f) {
+            if (currentProgress > 0f) {
                 LinearProgressIndicator(
-                    progress = { currentProgress.floatValue },
+                    progress = { currentProgress },
                     modifier = Modifier.fillMaxWidth()
                 )
             } else {
@@ -172,8 +170,8 @@ fun DownloadScreen(
                 errorMessage.value = ""
                 Text(uiState.message, color = Color.Green)
             } else {
-                if (uiState.message.isNotEmpty())
-                    errorMessage.value = uiState.message
+                if (!uiState.error.isNullOrEmpty())
+                    errorMessage.value = uiState.error!!
             }
         }
 

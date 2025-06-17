@@ -27,8 +27,8 @@ val httpClient = HttpClient(Android) {
         socketTimeoutMillis = timeout
     }
     install(Logging) {
-        logger = Logger.ANDROID
-        level = LogLevel.NONE
+        logger = Logger.DEFAULT
+        level = LogLevel.INFO
         logger = object : Logger {
             override fun log(message: String) {
                 println(message)
